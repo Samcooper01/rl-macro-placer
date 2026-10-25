@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rl-macro-placer V4 results</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+         max-width: 62rem; margin: 0 auto; padding: 1.5rem; line-height: 1.55; }
+  h1 { margin-bottom: 0.2rem; }
+  .sub { color: #777; margin-top: 0; }
+  .row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .card { flex: 1 1 320px; }
+  .card img { width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+  figcaption { font-size: 0.9rem; color: #777; margin-top: 0.4rem; }
+  code { background: rgba(128,128,128,0.15); padding: 0.1em 0.35em; border-radius: 3px; }
+  table { border-collapse: collapse; margin: 1rem 0; }
+  th, td { border: 1px solid #ccc; padding: 0.35rem 0.7rem; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  .key { border-left: 4px solid #c94a4a; background: rgba(201,74,74,0.08);
+         padding: 0.6rem 0.9rem; border-radius: 4px; margin: 1rem 0; }
+</style>
+</head>
+<body>
+<h1>rl-macro-placer, V4 results: the GNN encoder</h1>
+<p class="sub">Replacing the flat observation with a Graph Neural Network (GNN) over the netlist, the paper's key innovation, and an honest measurement of whether it helps at this scale.</p>
+
+<h2>What changed from V3</h2>
+<p>V3 gave the policy a flat observation, which cannot represent netlist structure, and it generalized only marginally (3% over random on held-out problems). V4 replaces that with a graph observation (nodes are macros and clusters, edges are shared nets) and a GNN feature extractor: two graph-convolution layers of message passing produce node embeddings, from which the policy reads the current macro's embedding, a global graph embedding, and features of the occupancy grid. The intent is exactly the paper's: give the policy a representation of connectivity so it generalizes across netlist structures.</p>
+
+<h2>Result (held-out, unseen problems, same 30-problem test set as V3)</h2>
+<table>
+  <tr><th>Policy</th><th>Held-out improvement over random</th></tr>
+  <tr><td>V3 flat MLP (Multi-Layer Perceptron)</td><td>~3%</td></tr>
+  <tr><td>V4 GNN</td><td>~0.9%</td></tr>
+</table>
+
+<div class="key">
+<strong>An honest negative result.</strong> At 300k training steps the GNN did <em>not</em> beat the simpler flat policy; it did slightly worse. This is a genuine finding, and it says something important: adding a GNN is not a magic fix. The paper's GNN advantage came with three things this version does not have: (1) a <em>deconvolution</em> action head that turns the graph embedding into a spatial placement grid (this version uses a plain layer to produce grid-cell logits, which translates structure into spatial decisions poorly); (2) far more training (a much larger network needs much more experience, and this environment is CPU-bound so long runs are expensive); and (3) transfer pre-training across many designs. The task here also has low headroom, masked-random placement is already reasonable, so all improvements are small and partly within noise.
+</div>
+
+<div class="row">
+  <figure class="card">
+    <img src="heldout_0.png" alt="held-out problem 0"><figcaption>GNN policy on a held-out problem (never trained on): valid, overlap-free.</figcaption>
+  </figure>
+  <figure class="card">
+    <img src="heldout_1.png" alt="held-out problem 1"><figcaption>Another unseen problem.</figcaption>
+  </figure>
+</div>
+
+<h2>What this demonstrates</h2>
+<p>The GNN machinery is built and integrated correctly (a custom message-passing feature extractor inside MaskablePPO, on a graph observation). The honest lesson is that realizing a GNN's benefit for placement requires the paper's architectural specifics (a deconvolution action head) and substantially more compute, not just the presence of a graph encoder. That is a more accurate understanding of the method than an uncritical reproduction would give.</p>
+
+<h2>Roadmap</h2>
+<p>Next steps to realize the GNN's benefit: a deconvolution action head (graph embedding to a placement-probability grid, as in the paper); much longer training with working parallel environments or more compute; and eventually transfer pre-training across problems. Beyond that: OpenROAD evaluation and a rigorous comparison against classical placers.</p>
+<p class="sub">See the repository README and RESULTS.md for the full arc.</p>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rl-macro-placer V1 results</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+         max-width: 60rem; margin: 0 auto; padding: 1.5rem; line-height: 1.55; }
+  h1 { margin-bottom: 0.2rem; }
+  .sub { color: #666; margin-top: 0; }
+  .row { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+  .card { flex: 1 1 320px; }
+  .card img { width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+  figcaption { font-size: 0.9rem; color: #666; margin-top: 0.4rem; }
+  .anim { text-align: center; margin: 1.5rem 0; }
+  .anim img { max-width: 420px; border: 1px solid #ccc; border-radius: 6px; }
+  code { background: rgba(128,128,128,0.15); padding: 0.1em 0.35em; border-radius: 3px; }
+  .metric { font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>rl-macro-placer, V1 results</h1>
+<p class="sub">Reinforcement-learning macro placement on a gridded canvas, a from-scratch demonstrator of the Google graph-placement method.</p>
+
+<p>The agent places 8 macros one at a time on a 20 by 20 grid. It is trained with MaskablePPO (Maskable Proximal Policy Optimization): action masking forbids placing on an occupied cell, so overlap is impossible. The reward is the negative HPWL (Half-Perimeter WireLength) of the netlist, so the agent learns to keep connected macros close.</p>
+
+<div class="anim">
+  <img src="placement.gif" alt="animation of the agent placing macros one at a time">
+  <figcaption>The trained agent placing macros one at a time (watch it build a compact cluster).</figcaption>
+</div>
+
+<div class="row">
+  <figure class="card">
+    <img src="placement_random.png" alt="random placement">
+    <figcaption>Random placement: <span class="metric">HPWL around 100</span>. Macros scattered, long crossing nets.</figcaption>
+  </figure>
+  <figure class="card">
+    <img src="placement_learned.png" alt="learned placement">
+    <figcaption>Learned placement: <span class="metric">HPWL around 12</span>. Overlap-free, tightly clustered.</figcaption>
+  </figure>
+</div>
+
+<h2>What this shows</h2>
+<ul>
+  <li>The reinforcement-learning placement loop works end to end: the agent learns to minimize wirelength from the reward alone.</li>
+  <li>Action masking (forbidding occupied cells) is a structural fix for overlap, better than a soft penalty the agent can learn to exploit. This matches the illegal-position masking in the Google paper.</li>
+  <li>V1 trains on one fixed problem to validate the machinery. Version 2 randomizes the netlist and adds a held-out test set, so the agent must generalize rather than memorize.</li>
+</ul>
+
+<p class="sub">See the repository README for the method, lineage, and roadmap.</p>
+</body>
+</html>

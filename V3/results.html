@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rl-macro-placer V3 results</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+         max-width: 62rem; margin: 0 auto; padding: 1.5rem; line-height: 1.55; }
+  h1 { margin-bottom: 0.2rem; }
+  .sub { color: #777; margin-top: 0; }
+  .row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .card { flex: 1 1 320px; }
+  .card img { width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+  figcaption { font-size: 0.9rem; color: #777; margin-top: 0.4rem; }
+  code { background: rgba(128,128,128,0.15); padding: 0.1em 0.35em; border-radius: 3px; }
+  .key { border-left: 4px solid #d9a400; background: rgba(217,164,0,0.08);
+         padding: 0.6rem 0.9rem; border-radius: 4px; margin: 1rem 0; }
+</style>
+</head>
+<body>
+<h1>rl-macro-placer, V3 results: generalization</h1>
+<p class="sub">From "optimize one fixed chip" to "learn a placer": a new random problem every episode, and evaluation on a held-out test set of problems the agent never trained on.</p>
+
+<h2>What changed from V2</h2>
+<p>V1 and V2 trained on a single fixed problem, so the agent could memorize it. V3 draws a fresh random problem every episode (random macro sizes and a random netlist), so the only way to do well is to learn a <em>general</em> placement policy. Generalization is then measured on a held-out set of 30 problems generated from a different random stream, which the agent never saw during training.</p>
+
+<h2>Result (held-out, unseen problems)</h2>
+<p>Over 30 problems the agent never trained on: <strong>learned mean cost 43.8 versus random 45.0</strong>, a 3% improvement.</p>
+
+<div class="key">
+<strong>Reading this honestly:</strong> the agent <em>does</em> generalize (it beats random on unseen problems, so it learned a transferable strategy rather than memorizing), but only marginally. The reason is the expected one: a flat MLP (Multi-Layer Perceptron) policy cannot represent netlist structure. The observation shows where placed macros are, but not the connectivity graph (which clusters connect to what) that actually drives the reward, so the policy is placing macros semi-blind to the structure that matters. This is exactly the ceiling the Graph Neural Network (GNN) encoder is designed to break, and it is why the GNN is the key innovation in the paper. V4 adds it.
+</div>
+
+<div class="row">
+  <figure class="card">
+    <img src="heldout_0.png" alt="held-out problem 0">
+    <figcaption>The learned policy on a held-out problem it never trained on: a valid, overlap-free macro placement with clusters legalized around them.</figcaption>
+  </figure>
+  <figure class="card">
+    <img src="heldout_1.png" alt="held-out problem 1">
+    <figcaption>Another unseen problem, different macro sizes and netlist.</figcaption>
+  </figure>
+</div>
+
+<h2>Roadmap</h2>
+<p>V4: a GNN encoder over the netlist, replacing the flat observation, to make the policy generalize well across netlist structures (the paper's core contribution). V5+: richer reward, sized-macro realism, OpenROAD evaluation, and a rigorous comparison against classical placers (simulated annealing, analytical).</p>
+<p class="sub">See the repository README for method, lineage, and roadmap.</p>
+</body>
+</html>
